@@ -1,0 +1,25 @@
+@model List<Licensing.Web.Modules.Features.FeaturesIndexQueryHandler.ResultItem>
+
+@if(Model.Count == 0 ){
+    <text>There are no features defined yet.</text>
+}
+else{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{ var currentNumber = 1;}
+            @foreach(var feature in Model){
+                <tr>
+                    <th>@currentNumber</th>
+                    <td>@feature.Name</td>
+                </tr>
+                currentNumber++;
+            }
+        </tbody>
+    </table>
+}

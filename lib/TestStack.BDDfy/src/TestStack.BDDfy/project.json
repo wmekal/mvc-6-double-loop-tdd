@@ -1,0 +1,9 @@
+{
+  "frameworks": {
+    "dnx451": {
+      "bin": {
+        "assembly": "bin/Debug/TestStack.BDDfy.dll"
+      }
+    }
+  }
+}
