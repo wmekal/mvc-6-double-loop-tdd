@@ -1,6 +1,0 @@
-﻿
-Scenario: Tags are reported in text report
-	Given a step
-
-Tags: Tag1, Tag 2
-
