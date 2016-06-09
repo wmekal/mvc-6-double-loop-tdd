@@ -1,5 +1,5 @@
 using Licensing.Web.Database;
-using Microsoft.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 
 namespace Licensing.Web.Infrastructure.Testing
 {

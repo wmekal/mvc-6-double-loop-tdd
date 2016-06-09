@@ -1,7 +1,7 @@
 using System.Linq;
 using Licensing.Web.Database;
-using Microsoft.AspNet.Mvc;
-using Microsoft.Data.Entity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Licensing.Web.Modules.Features
 {
@@ -27,7 +27,7 @@ namespace Licensing.Web.Modules.Features
                 })
                 .ToList();
 
-            return View("/Modules/Features/FeaturesIndex", features);
+            return View("/Modules/Features/FeaturesIndex.cshtml", features);
         }
 
         public class ResultItem

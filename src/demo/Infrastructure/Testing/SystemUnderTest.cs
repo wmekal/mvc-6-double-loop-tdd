@@ -1,17 +1,14 @@
 using System;
+using System.IO;
 using Licensing.Web.Database;
-using Microsoft.AspNet.Hosting;
-using Microsoft.AspNet.Hosting.Internal;
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.PlatformAbstractions;
 
 namespace Licensing.Web.Infrastructure.Testing
 {
     public class SystemUnderTest : IDisposable
     {
-        private IHostingEngine _host;
-        private IApplication _app;
+        private IWebHost _host;
 
         public SystemUnderTest()
         {
@@ -20,22 +17,22 @@ namespace Licensing.Web.Infrastructure.Testing
 
         private void Start()
         {
-            var currentServiceProvider = CallContextServiceLocator.Locator.ServiceProvider;
-
-            _host = new WebHostBuilder(new ConfigurationBuilder().Build(), true)
+            _host = new WebHostBuilder()
+                .UseKestrel()
+                .UseContentRoot(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\..\..\"))
                 .UseStartup<Startup>()
-                .UseServer("Microsoft.AspNet.Server.Kestrel")
                 .UseEnvironment("AcceptanceTesting")
-                .UseServices(services => {
+                .ConfigureServices(services => {
                     services.AddScoped(serviceProvider => new LicensingContextBuilder().InMemory().Build());
                 })
                 .Build();
-            _app = _host.Start();
+
+            _host.Start();
         }
 
         public void SetupData(Action<LicensingContext> setupData)
         {
-            var context = _app.Services.GetService<LicensingContext>();
+            var context = _host.Services.GetService<LicensingContext>();
 
             setupData(context);
             context.SaveChanges();
@@ -43,9 +40,9 @@ namespace Licensing.Web.Infrastructure.Testing
 
         public void Dispose()
         {
-            if( _app != null )
+            if( _host != null )
             {
-                _app.Dispose();
+                _host.Dispose();
             }
         }
     }

@@ -1,6 +1,5 @@
-using Microsoft.Data.Entity;
-using Microsoft.Data.Entity.Infrastructure;
 using Licensing.Web.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Licensing.Web.Database
 {

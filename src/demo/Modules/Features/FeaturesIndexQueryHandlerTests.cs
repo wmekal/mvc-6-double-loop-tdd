@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using FluentAssertions;
-using Microsoft.AspNet.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Xunit;
 using Licensing.Web.Models;
 
@@ -17,7 +17,7 @@ namespace Licensing.Web.Modules.Features
 
             var result = unitUnderTest.Handle() as ViewResult;
 
-            Assert.Equal("/Modules/Features/FeaturesIndex", result.ViewName);
+            Assert.Equal("/Modules/Features/FeaturesIndex.cshtml", result.ViewName);
         }
 
         [Fact]

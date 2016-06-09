@@ -1,6 +1,5 @@
 {
     "projects": [
-        "src",
-        "lib/TestStack.BDDfy"
+        "src"
     ]
 }
