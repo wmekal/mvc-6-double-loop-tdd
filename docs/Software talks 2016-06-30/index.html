@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Double Loop TDD z MVC 6 w praktyce</title>
+
+		<meta name="description" content="">
+		<meta name="author" content="Waldemar Mękal">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/white.css" id="theme">
+
+		<!-- Code syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/github-gist.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+		<style>
+			.reveal pre{
+				box-shadow: none;
+			}
+
+			.reveal pre code {
+				box-shadow: 0px 0px 6px rgba(0, 0, 0, 0.3);
+				background-color: white;
+				color: black;
+				/*color: white;*/
+			}
+		</style>
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h1>Double Loop TDD z&nbsp;MVC 6 w praktyce</h1>
+					<p>
+						<a href="">
+							Waldemar Mękal
+						</a>
+					</p>
+					<p>
+						<small>
+						<a href="mailto:waldemar.mekal@gmail.com">
+							waldemar.mekal@gmail.com
+						</a>
+						</small>
+					</p>
+					<p>
+						<small>
+						<a href="http://twitter.com/wmekal">
+							@wmekal
+						</a>
+						</small>
+					</p>
+				</section>
+
+				<!-- Example of nested vertical slides -->
+				<section>
+					<section>
+						<h2>Double loop TDD</h2>
+					</section>
+					<section>
+						<h2>Test Driven Development</h2>
+						<p>
+							<img src="images/tdd-simple.svg" style="width: 60%; border: 0;">
+						</p>
+						<p style="font-size: small">
+							<a href="http://www.growing-object-oriented-software.com/figures/tdd-simple.svg">Ilustracja</a>
+							autorstwa
+							<a href="http://www.growing-object-oriented-software.com/">http://www.growing-object-oriented-software.com/</a>
+							na licencji
+							<a href="http://creativecommons.org/licenses/by-sa/4.0/">CC BY SA</a>
+						</p>
+					</section>
+
+					<section>
+						<h2>Double loop TDD</h2>
+						<p>
+							<img src="images/tdd-with-acceptance-tests.svg" style="width: 100%; border: 0;">
+						</p>
+						<p style="font-size: small">
+							<a href="http://www.growing-object-oriented-software.com/figures/tdd-with-acceptance-tests.svg">Ilustracja</a>
+							autorstwa
+							<a href="http://www.growing-object-oriented-software.com/">http://www.growing-object-oriented-software.com/</a>
+							na licencji
+							<a href="http://creativecommons.org/licenses/by-sa/4.0/">CC BY SA</a>
+						</p>
+					</section>
+				</section>
+
+				<section>
+
+					<section>
+						<h2>Cykl #1</h2>
+					</section>
+
+					<section>
+						<h2>License Management System</h2>
+					</section>
+
+					<section>
+						<h2>Wymaganie #1</h2>
+						<p style="text-align: left; margin: 0 auto; width: 62%;">
+							Given there are no features<br>
+							When I go to features page<br>
+							Then I see a text <br>
+							&nbsp;&nbsp;&nbsp;&nbsp;'There are no features defined yet.'.
+						</p>
+					</section>
+
+					<section>
+						<h2>Test akceptacyjny</h2>
+						<pre>
+							<code class="cs">
+[Fact]
+public void No_Features_Defined_In_The_System()
+{
+	_context
+		.Given(c => c.ThereAreNoFeatures())
+		.When(c => c.IGoToFeaturesPage())
+		.Then(c => c.ISeeATextNoFeaturesDefinedYet())
+		.BDDfy("No_Features_Defined_In_The_System");
+}
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<h2>Kontekst</h2>
+						<pre>
+							<code class="cs">
+public class FeaturesIndexTestsContext
+{
+	public void ThereAreNoFeatures()
+	{
+		ResetDb();
+	}
+
+	public void IGoToFeaturesPage()
+	{
+		_client.Browser.Visit("/features");
+	}
+
+	public void ISeeATextNoFeaturesDefinedYet()
+	{
+		Assert.True(
+			_client.Browser.HasContent("There are no features defined yet.")
+		);
+	}
+
+	public FeaturesIndexTestsContext(SystemUnderTest system, Client client)
+	{
+		_system = system;
+		_client = client;
+	}
+
+	private void ResetDb()
+	{
+		_system.SetupData(context => {
+			context.Database.EnsureDeleted();
+			context.Database.EnsureCreated();
+		});
+	}
+
+	private readonly SystemUnderTest _system;
+	private readonly Client _client;
+}
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<h2>Client</h2>
+						<pre>
+							<code class="cs">
+public class Client : IDisposable
+{
+    public Client()
+    {
+        Start();
+    }
+
+    public BrowserSession Browser { get; set; }
+
+	private void Start()
+    {
+        Browser = new BrowserSession(new SessionConfiguration
+        {
+            AppHost = "localhost",
+            Port = 5000,
+            SSL = false,
+            Driver = typeof(Coypu.Drivers.Selenium.SeleniumWebDriver),
+            Browser = Coypu.Drivers.Browser.PhantomJS
+        });
+    }
+
+    public void Dispose()
+    {
+        if( Browser != null )
+        {
+            Browser.Dispose();
+        }
+    }	
+}
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<h2>System Under Test</h2>
+						<pre>
+							<code class="cs">
+public class SystemUnderTest : IDisposable
+{
+    public SystemUnderTest()
+    {
+        Start();
+    }
+
+	private void Start()
+    {
+        _host = new WebHostBuilder()
+            .UseKestrel()
+            .UseContentRoot(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\..\..\"))
+            .UseStartup&lt;Startup&gt;()
+            .UseEnvironment("AcceptanceTesting")
+            .Build();
+
+        _host.Start();
+    }
+
+    public void Dispose()
+    {
+        if( _host != null )
+        {
+            _host.Dispose();
+        }
+    }	
+
+	private IWebHost _host;
+}
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<h2>Test jednostkowy #1</h2>
+						<pre>
+							<code class="cs">
+[Fact]
+public void Handle_WhenCalled_ReturnsFeaturesIndexView()
+{
+	var unitUnderTest = new FeaturesIndexQueryHandlerBuilder()
+		.Build();
+
+	var result = unitUnderTest.Handle() as ViewResult;
+
+	Assert.Equal("/Modules/Features/FeaturesIndex.cshtml", result.ViewName);
+}
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<h2>Implementacja akcji</h2>
+						<pre>
+							<code class="cs">
+public IActionResult Handle()
+{
+	return View("/Modules/Features/FeaturesIndex.cshtml");
+}
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<h2>Test jednostkowy #2</h2>
+						<pre>
+							<code class="cs">
+[Fact]
+public void Handle_WhenNoFeatures_ReturnsViewWithEmptyList()
+{
+	var unitUnderTest = new FeaturesIndexQueryHandlerBuilder()
+		.Build();
+
+	var viewResult = unitUnderTest.Handle() as ViewResult;
+	var result = viewResult.ViewData.Model as List&lt;FeaturesIndexQueryHandler.ResultItem&gt;;
+
+	var expected = new List&lt;FeaturesIndexQueryHandler.ResultItem&gt;();
+	result.ShouldBeEquivalentTo(expected);
+}
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<h2>Implementacja akcji</h2>
+						<pre>
+							<code class="cs">
+public IActionResult Handle()
+{
+	return View("/Modules/Features/FeaturesIndex.cshtml", new List&lt;FeaturesIndexQueryHandler.ResultItem&gt;());
+}
+							</code>
+						</pre>
+					</section>
+					
+					<section>
+						<h2>Uruchomienie testu akceptacyjnego</h2>						
+					</section>
+
+					<section>
+						<h2>Implementacja widoku</h2>
+						<pre>
+							<code class="cs">
+@model List&lt;Licensing.Web.Modules.Features.FeaturesIndexQueryHandler.ResultItem&gt;
+
+@if(Model.Count == 0 ){
+    &lt;text&gt;There are no features defined yet.&lt;/text&gt;
+}
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<h2>Uruchomienie testu akceptacyjnego</h2>						
+					</section>
+
+					<section>
+						<h2>Koniec cyklu!</h2>						
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h2>Cykl #2</h2>
+					</section>
+
+					<section>
+						<h2>Wymaganie #2</h2>
+						<p style="text-align: left; margin: 0 auto; width: 53%;">
+							Given there are defined features<br>
+							When I go to features page<br>
+							Then I see all defined features
+						</p>
+					</section>
+
+					<section>
+						<h2>Test akceptacyjny</h2>
+						<pre>
+							<code class="cs">
+[Fact]
+public void Features_Defined_In_The_System()
+{
+	_context
+		.Given(c => c.ThereAreDefinedFeatures())
+		.When(c => c.IGoToFeaturesPage())
+		.Then(c => c.ISeeAllDefinedFeatures())
+		.BDDfy("Features_Defined_In_The_System");
+}
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<h2>Kontekst</h2>
+						<pre>
+							<code class="cs">
+public class FeaturesIndexTestsContext
+{
+	public void ThereAreDefinedFeatures()
+	{
+		ResetDb();
+
+		_system.SetupData(context => {
+			context.Add(new Feature { Name = "feature 1" });
+			context.Add(new Feature { Name = "feature 2" });
+		});
+	}
+
+	public void IGoToFeaturesPage()
+	{
+		_client.Browser.Visit("/features");
+	}
+
+	public void ISeeAllDefinedFeatures()
+	{
+		var table = _client.Browser
+			.FindCss("table");
+
+		Assert.True(
+			table.Exists()
+				&& table.HasContent("feature 1")
+				&& table.HasContent("feature 2")
+		);
+	}
+}
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<h2>System Under Test</h2>
+						<pre>
+							<code class="cs">
+public class SystemUnderTest : IDisposable
+{
+    public void SetupData(Action&lt;LicensingContext&gt; setupData)
+    {
+        var context = _host.Services.GetService&lt;LicensingContext&gt;();
+
+        setupData(context);
+
+        context.SaveChanges();
+    }
+
+    private void Start()
+    {
+        _host = new WebHostBuilder()
+            .UseKestrel()
+            .UseContentRoot(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\..\..\"))
+            .UseStartup&lt;Startup&gt;()
+            .UseEnvironment("AcceptanceTesting")
+            .ConfigureServices(services => {
+                services.AddScoped(serviceProvider => new LicensingContextBuilder().InMemory().Build());
+            })
+            .Build();
+
+        _host.Start();
+    }
+}
+							</code>
+						</pre>
+					</section>
+
+					<section>
+						<h2>Testy jednostkowe</h2>
+						<pre>
+							<code class="cs">
+[Fact]
+public void Handle_WhenFeatures_ReturnsViewWithAllFeaturesList()
+{
+	var unitUnderTest = new FeaturesIndexQueryHandlerBuilder()
+		.WithData(context =&gt;
+		{
+			context.Features.Add(new Feature { Name = "feature 1" });
+			context.Features.Add(new Feature { Name = "feature 2" });
+		})
+		.Build();
+
+	var viewResult = unitUnderTest.Handle() as ViewResult;
+	var result = viewResult.ViewData.Model as List&lt;FeaturesIndexQueryHandler.ResultItem&gt;;
+
+	var expected = new List&lt;FeaturesIndexQueryHandler.ResultItem&gt;{
+		new FeaturesIndexQueryHandler.ResultItem { Id = 1, Name = "feature 1"},
+		new FeaturesIndexQueryHandler.ResultItem { Id = 2, Name = "feature 2"}
+	};
+	result.ShouldBeEquivalentTo(expected);
+}
+							</code>
+						</pre>
+					</section>
+				</section>
+
+				<section>
+					<h1>Podsumowanie</h1>
+				</section>
+
+				<section>
+					<section>
+						<h1>Co dalej?</h1>
+					</section>
+
+					<section>
+						<h2 style="font-size: smaller">
+							<a href="https://github.com/wmekal/mvc-6-double-loop-tdd">https://github.com/wmekal/mvc-6-double-loop-tdd</a>
+						</h2>
+					</section>
+
+					<section>
+						<p>
+							<img src="images/goosgbt.jpg" style="border: 0;">
+						</p>
+						<p style="font-size: small">
+							<a href="http://www.growing-object-oriented-software.com/cover.jpg">Zdjęcie okładki</a>
+							z
+							<a href="http://www.growing-object-oriented-software.com/">http://www.growing-object-oriented-software.com/</a>
+						</p>
+					</section>
+					<section>
+						<h2>Outside-In TDD</h2>
+						<p>
+							<a href="https://app.pluralsight.com/library/courses/outside-in-tdd/table-of-contents">Kurs Marka Seemana</a>
+						</p>
+					</section>
+
+					<section>
+						<h1>rg-dev</h1>
+						<h2>8. września 2016</h2>
+					</section>
+				</section>
+
+				<section>
+					<h1>Dziękuję za uwagę</h1>
+					<p>
+						<small>
+						<a href="mailto:waldemar.mekal@gmail.com">
+							waldemar.mekal@gmail.com
+						</a>
+						</small>
+					</p>
+					<p>
+						<small>
+						<a href="http://twitter.com/wmekal">
+							@wmekal
+						</a>
+						</small>
+					</p>
+				</section>
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+
+			// Full list of configuration options available at:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+
+				transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+				// Optional reveal.js plugins
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, condition: function() { return !!document.querySelector( 'pre code' ); }, 
+						callback: function() { 
+							hljs.configure({
+								tabReplace: '    ', // 4 spaces
+							}); 
+							hljs.initHighlightingOnLoad(); 
+						} 
+					},
+					{ src: 'plugin/zoom-js/zoom.js', async: true },
+					{ src: 'plugin/notes/notes.js', async: true }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
